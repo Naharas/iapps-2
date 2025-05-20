@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iapps - Biblioteca de Aplicaciones IA</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #dff9fb, #c7ecee);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #130f40;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    form {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #130f40;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #30336b;
+    }
+    .card {
+      background: #f1f2f6;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .search-bar {
+      margin-bottom: 20px;
+    }
+    .search-bar input {
+      width: calc(100% - 100px);
+      display: inline-block;
+    }
+    .search-bar button {
+      width: 90px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Iapps - Biblioteca de Aplicaciones IA</h1>
+    <p>Explora, registra y encuentra herramientas de Inteligencia Artificial según tu necesidad</p>
+  </header>
+  <div class="container">
+    <form id="appForm">
+      <h2>Registrar nueva aplicación</h2>
+      <label>Nombre:</label>
+      <input type="text" id="nombre" required />
+      <label>Funcionalidad:</label>
+      <textarea id="funcionalidad" required></textarea>
+      <label>Enlace web:</label>
+      <input type="url" id="enlace" required />
+      <label>Pasos para usar:</label>
+      <textarea id="pasos" required></textarea>
+      <label>Ejemplo visual (descripción):</label>
+      <textarea id="ejemplo" required></textarea>
+      <button type="submit">Registrar aplicación</button>
+    </form>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Buscar por nombre, funcionalidad o necesidad" />
+      <button id="buscarBtn">Buscar</button>
+    </div>
+
+    <div id="resultadoBusqueda"></div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCF9pNhYB0fSm76dy-ixYu4X8gYENICnC4",
+      authDomain: "iapps-abba5.firebaseapp.com",
+      projectId: "iapps-abba5",
+      storageBucket: "iapps-abba5.appspot.com",
+      messagingSenderId: "162681371271",
+      appId: "1:162681371271:web:93ce6b40c2fa0b25991622"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function precargarEjemplos() {
+      const ejemplos = [
+        { nombre: "Napkin AI", funcionalidad: "Organiza ideas como un mapa mental inteligente.", enlace: "https://www.napkin.one/", pasos: "1. Regístrate\\n2. Crea notas\\n3. Observa conexiones\\n4. Revisa sugerencias", ejemplo: "Un escritor conecta ideas para un libro." },
+        { nombre: "NotebookLM", funcionalidad: "Resume y responde preguntas sobre documentos.", enlace: "https://notebooklm.google/", pasos: "1. Sube documentos\\n2. Haz preguntas\\n3. Recibe respuestas", ejemplo: "Un estudiante estudia con IA." },
+        { nombre: "Claude", funcionalidad: "Chatbot avanzado de IA conversacional.", enlace: "https://claude.ai/", pasos: "1. Inicia sesión\\n2. Escribe preguntas\\n3. Recibe respuestas detalladas", ejemplo: "Un abogado consulta cláusulas legales." }
+      ];
+      for (let app of ejemplos) {
+        await db.collection("apps").add(app);
+      }
+    }
+
+    document.getElementById('appForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nombre = document.getElementById('nombre').value;
+      const funcionalidad = document.getElementById('funcionalidad').value;
+      const enlace = document.getElementById('enlace').value;
+      const pasos = document.getElementById('pasos').value;
+      const ejemplo = document.getElementById('ejemplo').value;
+
+      try {
+        await db.collection("apps").add({ nombre, funcionalidad, enlace, pasos, ejemplo });
+        alert("Aplicación registrada exitosamente");
+        document.getElementById('appForm').reset();
+      } catch (error) {
+        alert("Error al guardar: " + error);
+      }
+    });
+
+    async function buscarApp() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const snapshot = await db.collection("apps").get();
+      let resultados = "";
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.nombre.toLowerCase().includes(input) || data.funcionalidad.toLowerCase().includes(input)) {
+          resultados += `
+            <div class="card">
+              <strong>${data.nombre}</strong><br/>
+              <em>${data.funcionalidad}</em><br/>
+              <a href="${data.enlace}" target="_blank">Ir a la aplicación</a><br/>
+              <strong>Pasos:</strong> ${data.pasos}<br/>
+              <strong>Ejemplo:</strong> ${data.ejemplo}
+            </div>
+          `;
+        }
+      });
+      document.getElementById('resultadoBusqueda').innerHTML = resultados || "<p>No se encontraron coincidencias.</p>";
+    }
+
+    document.getElementById('buscarBtn').addEventListener('click', buscarApp);
+    precargarEjemplos();
+  </script>
+</body>
+</html>
